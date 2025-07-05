@@ -52,7 +52,7 @@
 .ban-status-btn:hover {
     background: #2563eb;
  }
-/* Add to: c:\Users\danki\OneDrive\Документы\hww\vue-project\src\assets\styles.css */
+
 .notification-stack {
     display: flex;
     flex-direction: column;
@@ -88,7 +88,6 @@
     color: #991b1b;
 }
 
-/* Severity backgrounds and borders */
 .bg-error {
     background: #fee2e2;
     border-color: #fca5a5;
@@ -108,7 +107,7 @@
     background: #f3f4f6;
     border-color: #d1d5db; 
 }
-/* Add to: c:\Users\danki\OneDrive\Документы\hww\vue-project\src\assets\styles.css */
+
 .user-status-container {
     padding: 1rem;
     background: #fff;

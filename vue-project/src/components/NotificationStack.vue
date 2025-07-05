@@ -1,53 +1,56 @@
-
 <script setup lang="ts">
-import { notifications$ } from '@/services/notificationService';
-import { ref, onMounted, onUnmounted } from 'vue';
+import { notifications$, dismissNotification } from '@/services/notificationService';
+import type { Notification } from '@/services/notificationService';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 
-const notifications = ref([]);
+const rawNotifications = ref<Notification[]>([]);
 
-let sub: any;
+let sub: ReturnType<typeof notifications$.subscribe>;
 
 onMounted(() => {
-    sub = notifications$.subscribe(value => {
-        notifications.value = value;
-    });
+  sub = notifications$.subscribe(value => {
+    rawNotifications.value = value;
+  });
 });
 
 onUnmounted(() => {
-    sub?.unsubscribe();
+  sub?.unsubscribe();
 });
 
+const visibleNotifications = computed(() =>
+  rawNotifications.value.filter(n => !n.dismissed)
+);
+
 const remove = (index: number) => {
-    notifications$.next([
-        ...notifications.value.slice(0, index),
-        ...notifications.value.slice(index + 1),
-    ]);
+  dismissNotification(index); 
 };
 
 const getClass = (severity: string) => {
-    switch (severity) {
-        case 'error':
-            return 'bg-error';
-        case 'notice':
-            return 'bg-notice';
-        case 'trivial':
-            return 'bg-trivial';
-        default:
-            return 'bg-default';
-    }
+  switch (severity) {
+    case 'error':
+      return 'bg-error';
+    case 'notice':
+      return 'bg-notice';
+    case 'trivial':
+      return 'bg-trivial';
+    default:
+      return 'bg-default';
+  }
 };
 </script>
 <template>
     <div class="notification-stack">
-        <div v-for="(notif, index) in notifications" :key="index"
-            class="notification-item"
-            :class="getClass(notif.severity)">
-            <div class="notification-text">
-                {{ new Date(notif.date).toLocaleTimeString() }} - {{ notif.reason }}
-            </div>
-            <button @click="remove(index)" class="notification-close">
-                ✕
-            </button>
+      <div
+        v-for="(notif, index) in visibleNotifications"
+        :key="notif.date"
+        class="notification-item"
+        :class="getClass(notif.severity)"
+      >
+        <div class="notification-text">
+          {{ new Date(notif.date).toLocaleTimeString() }} - {{ notif.reason }}
         </div>
+        <button @click="remove(index)" class="notification-close">✕</button>
+      </div>
     </div>
-</template>
+  </template>
+  

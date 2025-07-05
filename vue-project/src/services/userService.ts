@@ -1,6 +1,5 @@
-
 import { faker } from '@faker-js/faker';
-import { BehaviorSubject, Subject, interval } from 'rxjs';
+import { BehaviorSubject, Subject, interval, distinctUntilChanged, map, pairwise, startWith , filter} from 'rxjs';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface User {
@@ -10,16 +9,35 @@ export interface User {
 }
 
 export const users$ = new BehaviorSubject<User[]>([]);
-export const userCreated$ = new Subject<User>();
-export const userRemoved$ = new Subject<User>();
+export const userCreated$ = users$.pipe(
+  startWith([] as User[]),
+  pairwise(),
+  map(([prev, curr]) => curr.filter(u => !prev.some(p => p.id === u.id))),
+  filter(newUsers => newUsers.length > 0), 
+  map(newUsers => newUsers[0]),
+  distinctUntilChanged((a, b) => a?.id === b?.id)
+);
 
-const kibish: User = {
+
+export const userRemoved$ = new Subject<User>(); 
+
+export function addUser(user: User) {
+  users$.next([...users$.value, user]);
+}
+
+export function removeUser(userId: string) {
+  const current = users$.value;
+  const user = current.find(u => u.id === userId);
+  if (!user) return;
+  users$.next(current.filter(u => u.id !== userId));
+  userRemoved$.next(user);
+}
+
+addUser({
   id: uuidv4(),
   name: 'Kibish',
-  createdAt: Date.now()
-};
-users$.next([kibish]);
-userCreated$.next(kibish);
+  createdAt: Date.now(),
+});
 
 interval(6000).subscribe(() => {
   const chance = Math.random();
@@ -35,6 +53,5 @@ interval(6000).subscribe(() => {
     createdAt: Date.now(),
   };
 
-  users$.next([...users$.value, user]);
-  userCreated$.next(user);
+  addUser(user);
 });
